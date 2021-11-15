@@ -1,0 +1,95 @@
+-----------------------AWS----------------------------
+API GATEWAY
+
+para ejecutar las sentencias sql para que sea mas seguro
+toco crear servicios rest (get y post para traer la info o modificarla)
+- En crear apli se selecciona la tercera para usar con lambda, se le da crear, se le da el nombre y se crea
+	- ahi no tiene ningun metodo, se le da en crear metodo y se selecciona el tipo de metodo, ejemplo get
+	- se enlaza con una funcion lambda y se escoge la funcion de lambda 
+	- acciones habilitar CORS para que se puede hacer la peticion desde cualquier ip
+		- selecciona el metodo y darle aceptar
+	- acciones implementar la api, como no hay ninguna se le da a crear una y ahora aparece en la parte de etapas
+	- ahi se le da en el nombre y sale la url para usar en el codigo de react js y ahi se pueden hacer pruebas
+	- metodo get se usa la url para traer, y el post se usa el ur y parametros (en un json) para actualizar la info y ademas responde
+	- todo responde con json
+
+LAMBDA
+
+- parte izquierda funciones
+- funcionan en python
+- en el pc las dependencias deben estar en la misma ruta donde esta el codigo de python para que cuand este listo el codigo
+	se pueda subir el .zip a lambda y ya sirva
+- al crear una nueva funcion, se le da el nombre, el lenguaje de programacion y el rol, en este 
+- al crearla sale un script de prueba con un metodo que siempre tiene que estar con esos 2 parametros
+	-ahi se le da clic derecho y cargar el zip
+	-en configuracion de tiempo de ejecucion se le da editar
+		- se le pone el nobre del script.lambda_handler y guardar para que se ejecute bien
+		- cuando es un codigo de get no se usan los parametros event y context, solo se usan cuando es un post
+		-en el servicio post si se usan los parametros de la funcion 
+		- los numeros de status code es lo de 404 que es not found y asi, entonces 200 es exitoso
+		- a los cambios que se le hagan se debe dar deploy para que los guarde
+
+
+-------------APLICACION EN REACT JS----------------
+
+node npm crear xiscua
+- se crean las carpetas y demas osea la estructura basica o inicial
+-aqui solo se tiene css y javascript, el html esta inmerso en todo el codigo
+
+- App.js
+	-se crea el routing de todas las paginas
+	-se instala el react router dom y se importan los componentes de cada pagina 
+- Index js
+	-apunta al archivo app.js que es el que tiene todo
+
+-Carpeta Natvar
+	-tutorial, se usa la libreria link para redireccionar cuando se hace clic a los botones
+	-aqui se controlan los clics a las paginas y que redirija a cada pagina respectivamente con el evento click
+	
+
+-Lateral Menu carpeta
+	- la barra de la izquiera
+	-LateralMenu.js
+		-aqui esta el boton de las 3 rayas
+		-el boton de la x 
+		- se recorre una lista donde estan los nombres de cada una de las secciones
+
+	-SidebarData.js
+		-aqui esta la lista donde esta cada una de las paginas, con su titulo, la ruta, el icono (es una libreria)
+			y el formato del texto que es el c name
+	-LateralMenu.css
+
+PAGES carpeta
+	- LOGIN carpeta
+		- Login.css
+			- se copio de un tutorial
+		-Login.js
+			- se le agrega la barra de navegacin y es un formulario de dos campos para user
+			y password
+			- se instala la libreria axios para consumir los servicios 
+			- se define el constructor de react se pone el user y la clave y el datalogin es para capturar la info que se obtiene
+
+			- el handle es para manejar si se hace clic en el boton y traer la info de los campos
+			- aqui se verifica user y password con un metodo y las respuestas del servidor de aws con la libreria axios, si es correcta redirige a la pagina cultivo
+
+
+	-Monitoreo cultivo carpeta
+		- Monitoreo cultivo js
+			- se definen las url de api gateway
+			-se crea el constructor y se ponen todas las variables de los datos que se van a usar
+			- los arreglos es porque vienen muchos datos
+			-cada una de esas var tiene una funcion y la funcion del boton
+			-los metodos change son los que actualizan en tiempo real la variable con lo que escribe el usuario
+			-el metodo submit del boton verifica la veracidad de los datos de los rangos de ph y CE
+			-componentDiMount: es el metodo que se ejecuta recien se inicia la vista
+
+
+
+			
+
+	
+
+
+
+
+

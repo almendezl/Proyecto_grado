@@ -1,0 +1,8 @@
+Instalar python 
+instalar modulo boto3
+	pip install boto3
+
+se ingresa en amazon, se seleccion la opcion credenciales de seguridad
+seleccionar claves de acceso(ID de clave de acceso y clave de acceso secreta)
+
+crear el script

@@ -1,0 +1,27 @@
+import machine
+import time
+
+while True:
+	apin = machine.ADC('D0')
+	VREF = 3.7
+	muestras = 30
+	global analogBuffer
+	analogBuffer = []
+	global analogBufferTemp
+	analogBufferTemp = []
+	global averageVoltage
+	global tdsValue
+	temperature = 25
+	global analogBufferIndex
+	analogBufferIndex = 0
+	copyIndex = 0
+	crudo = 0
+	time.sleep(0.04)
+	crudo = apin.read()
+	print(crudo)
+	analogBufferIndex = analogBufferIndex + 1
+	averageVoltage = crudo * VREF / 4095.0
+	compensationCoefficient=1.0+0.02*(temperature-25.0)
+	compensationV = averageVoltage/compensationCoefficient
+	tdsValue = (133.42*compensationV*compensationV*compensationV - 255.86*compensationV*compensationV + 857.39*compensationV)*0.5
+	print(tdsValue)

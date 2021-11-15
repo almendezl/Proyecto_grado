@@ -1,0 +1,64 @@
+from machine import I2C
+import sys
+import time
+import xbee
+
+# Constants
+HDC1080_ADDR = 0x40
+
+REG_TMP = 0x00
+REG_HUM = 0x01
+
+# inicializar periferico I2C
+i2c = I2C(1)
+
+# verificar que el sensor este conectado a la interfaz
+if HDC1080_ADDR not in i2c.scan():
+    print("NO SE PUDO ENCONTRAR EL SENSOR HDC1080")
+    sys.exit(1)
+    try:
+        xbee.transmit(xbee.ADDR_BROADCAST, MESSAGE)
+        print("SENSOR HDC1080 DESCONECTADO")
+    except Exception as e:
+        print("FALLO AL ENVIAR EL MENSAJE")
+
+# COMENZAR A LEER LOS DATOS DEL SENSOR
+while True:
+    # Change the pointer to 0x00 (Temperature register)
+    i2c.writeto(HDC1080_ADDR, bytearray([REG_TMP]))
+    # Wait for the temperature measure to complete (per data sheet).
+    time.sleep(0.0635)
+    # LEER EL VALOR DE LA TEMPERATURA (2 bytes).
+    temp_bytes = i2c.readfrom(HDC1080_ADDR, 2)
+    # CALCULAR LA TEMPERATURA EN CELSIUS
+    temp_celsius = (int.from_bytes(temp_bytes, "big") / 2 ** 16) * 165 - 40
+
+    # Change the pointer to 0x01 (Temperature register)
+    i2c.writeto(HDC1080_ADDR, bytearray([REG_HUM]))
+    # Wait for the humidity measure to complete (per data sheet).
+    time.sleep(0.065)
+    # LEER EL VALOR DE LA HUMEDAD (2 bytes).
+    humidity_bytes = i2c.readfrom(HDC1080_ADDR, 2)
+    # CALCULAR LA HUMEDAD RELATIVA.
+    humidity_hr = (int.from_bytes(humidity_bytes, "big") / 2 ** 16) * 100
+
+    #REDONDEAR Y GUARDAR VALORES
+    #print(temp_celsius)
+    #print(humidity_hr)
+    TEMP = round(temp_celsius, 1)
+    HUM = round(humidity_hr, 1)
+
+    # IMPRIMIR LOS RESULTADOS:
+    print("- Temperatura: %s C" % TEMP)
+    print("- Humedad Relativa: %s %%" % HUM)
+    #print("")
+    
+    MESSAGE = "R1_"+str(TEMP) +"_"+ str(HUM)
+
+    try:
+        xbee.transmit(xbee.ADDR_BROADCAST, MESSAGE)
+        print("MENSAJE ENVIADO CORRECTAMENTE")
+    except Exception as e:
+        print("ERROR AL TRANSMITIR EL MENSAJE")
+
+    time.sleep(60)

@@ -1,0 +1,130 @@
+from machine import I2C
+import time
+import xbee
+import machine
+
+TARGET_NODE_ID = "XISCUA_COORD"
+DIRECCION = b'\x00\x13\xa2\x00A\x8d\x0b\xb6'
+
+# Constants
+HDC1080_ADDR = 0x40
+
+REG_TMP = 0x00
+REG_HUM = 0x01
+
+# inicializar periferico I2C
+i2c = I2C(1)
+
+global TEMP
+TEMP = 0
+global HUM
+HUM = 0
+
+global e_sensor
+e_sensor = ""
+
+global MENSAJE
+MENSAJE = ""
+
+def sensor2():
+    print("Entro sensor 2")
+    apin1 = machine.ADC('D0')
+    #apin2 = machine.ADC('D3')
+    val1 = float(apin1.read())
+    #val2 = float(apin2.read())
+    return round((val1), 2)
+
+
+def sensor1():
+    print("Entro sensor 1")
+    # verificar que el sensor este conectado a la interfaz
+    if HDC1080_ADDR not in i2c.scan():
+        TEMP = "X"
+        HUM = "X"
+        return "R1_X_X"
+
+    # cambiar el puntero para el registro
+    i2c.writeto(HDC1080_ADDR, bytearray([REG_TMP]))
+    # esperar para poder leer la temp
+    time.sleep(0.0635)
+    # LEER EL VALOR DE LA TEMPERATURA (2 bytes).
+    temp_bytes = i2c.readfrom(HDC1080_ADDR, 2)
+    # CALCULAR LA TEMPERATURA EN CELSIUS
+    temp_celsius = (int.from_bytes(temp_bytes, "big") / 2 ** 16) * 165 - 40
+
+    # cambiar l puntero para la humedad
+    i2c.writeto(HDC1080_ADDR, bytearray([REG_HUM]))
+    # esperar para la lectura
+    time.sleep(0.065)
+    # LEER EL VALOR DE LA HUMEDAD (2 bytes).
+    humidity_bytes = i2c.readfrom(HDC1080_ADDR, 2)
+    # CALCULAR LA HUMEDAD RELATIVA.
+    humidity_hr = (int.from_bytes(humidity_bytes, "big") / 2 ** 16) * 100
+
+    # REDONDEAR Y GUARDAR VALORES
+    # print(temp_celsius)
+    # print(humidity_hr)
+    TEMP = round(temp_celsius, 1)
+    HUM = round(humidity_hr, 1)
+
+    # IMPRIMIR LOS RESULTADOS:
+    print("- Temperatura: %s C" % TEMP)
+    print("- Humedad Relativa: %s %%" % HUM)
+
+    return "R1_" + str(TEMP) + "_" + str(HUM)
+
+
+while True:
+    print("Waiting for data...\n")
+
+    while True:
+        # Check if the XBee has any message in the queue.
+        received_msg = xbee.receive()
+        if received_msg:
+            payload = received_msg['payload']
+            mensaje = payload.decode()
+            print(mensaje)
+            trama = mensaje.split("_")
+            if trama[0] == "R1":
+                time.sleep(10)
+                if trama[1] == "THS":
+                    msj = sensor1() + "_" + str(sensor2())
+
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, msj)
+                        print("Dato enviado")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                if trama[1] == "ESTADO":
+                    x = xbee.XBee()
+                    val = sensor1()
+                    if val == "R1_X_X" and sensor2() >= 4000:
+                        e_sensor = "ERROR"
+                    else:
+                        e_sensor = "OK"
+
+                    estado = "ESTADO_R1_" + str(x.atcmd('VR')) + "_" + str(x.atcmd('%V')) + "_" + str(
+                        x.atcmd('TP')) + "_" + e_sensor
+                    print(estado)
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, estado)
+                        print("Dato enviado")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                if trama[1] == "SLEEP":
+                    tiempo = int(trama[2]) * 60000
+                    x = xbee.XBee().sleep_now(tiempo, True)
+
+                if trama[1] == "RESET":
+                    x = xbee.XBee()
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, "RESET_R1_OK")
+                        print("RESET")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+                    x.atcmd('FR')

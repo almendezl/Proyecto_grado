@@ -1,0 +1,90 @@
+import machine
+import time
+import xbee
+from machine import Pin
+
+TARGET_NODE_ID = "XISCUA_COORD"
+DIRECCION = b'\x00\x13\xa2\x00A\x8d\x0b\xb6'
+global CE
+CE = 0
+global e_sensor
+e_sensor = ""
+
+global estado
+
+
+def sensor():
+    apin = machine.ADC('D0')
+    VREF = 3.7
+    muestras = 30
+    crudo = 0
+
+    temperature = 25
+    for i in range(0, muestras):
+        crudo = crudo + apin.read()
+        crudo = crudo / 30
+        time.sleep(0.04)
+
+    voltaje = crudo * VREF / 4095.0
+    coeficiente = 1.0 + 0.02 * (temperature - 25.0)
+    compensacion = voltaje / coeficiente
+    tdsValor = (
+                           133.42 * compensacion * compensacion * compensacion - 255.86 * compensacion * compensacion + 857.39 * compensacion) * 0.5
+    print("TDS " + str(tdsValor))
+    return round((tdsValor / 640), 2)
+
+
+while True:
+    print("Waiting for data...\n")
+
+    while True:
+        # Check if the XBee has any message in the queue.
+        received_msg = xbee.receive()
+        if received_msg:
+            payload = received_msg['payload']
+            mensaje = payload.decode()
+            print(mensaje)
+            trama = mensaje.split("_")
+            if trama[0] == "R2":
+                time.sleep(10)
+                if trama[1] == "CE":
+                    CE = sensor()
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, "R2_" + str(CE))
+                        print("Dato enviado")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                if trama[1] == "ESTADO":
+                    x = xbee.XBee()
+                    CE = sensor()
+
+                    if CE >= 0:
+                        e_sensor = "OK"
+                    else:
+                        e_sensor = "ERROR"
+                    estado = "ESTADO_R2_" + str(x.atcmd('VR')) + "_" + str(x.atcmd('%V')) + "_" + str(
+                        x.atcmd('TP')) + "_OK"
+                    print(estado)
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, estado)
+                        print("Dato enviado")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                if trama[1] == "SLEEP":
+                    tiempo = int(trama[2]) * 60000
+                    x = xbee.XBee().sleep_now(tiempo, True)
+
+                if trama[1] == "RESET":
+                    x = xbee.XBee()
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, "RESET_R2_OK")
+                        print("RESET_R2_OK")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                    x.atcmd('FR')

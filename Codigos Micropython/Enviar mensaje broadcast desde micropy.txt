@@ -1,0 +1,17 @@
+import xbee
+
+
+MESSAGE = "Hello XBee World!"
+
+
+print(" +-------------------------------------------------+")
+print(" | XBee MicroPython Transmit Broadcast Data Sample |")
+print(" +-------------------------------------------------+\n")
+
+print("Sending broadcast data >> %s" % MESSAGE)
+
+try:
+    xbee.transmit(xbee.ADDR_BROADCAST, MESSAGE)
+    print("Data sent successfully")
+except Exception as e:
+    print("Transmit failure: %s" % str(e))

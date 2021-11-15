@@ -1,0 +1,7 @@
+import xbee
+xb = xbee.XBee()
+
+# do things interruptable by sleep bloquea el sleep mientras hace ciertas tareas
+with xb.wake_lock:
+	# do important things
+# back to things that are safe to interrupt

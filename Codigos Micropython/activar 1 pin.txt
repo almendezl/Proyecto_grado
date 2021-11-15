@@ -1,0 +1,11 @@
+import time
+from machine import Pin
+
+
+dio12 = Pin("D12", Pin.OUT, value=0) #aqui esta apagado por defecto
+#se le da la orden de encender o para apagado, 1 encendido
+
+dio12.value(1) 
+time.sleep(10) #duracion prendido
+dio12.value(0) 
+

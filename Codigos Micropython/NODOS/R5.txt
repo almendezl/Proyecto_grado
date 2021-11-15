@@ -1,0 +1,61 @@
+from machine import Pin
+import time
+import xbee
+import sys
+
+TARGET_NODE_ID = "XISCUA_COORD"
+DIRECCION = b'\x00\x13\xa2\x00A\x8d\x0b\xb6'
+
+dio12 = Pin("D12", Pin.OUT, value=0)
+while True:
+    print("Waiting for data...\n")
+
+    while True:
+        # Check if the XBee has any message in the queue.
+        received_msg = xbee.receive()
+        if received_msg:
+            payload = received_msg['payload']
+            mensaje = payload.decode()
+            print(mensaje)
+            trama = mensaje.split("_")
+            if trama[0] == "R5":
+                time.sleep(10)
+                if trama[1] == "RIEGO":
+                    dio12.value(1)
+                    duracion = int(trama[2])
+                    # duracion prendido
+                    time.sleep(duracion)
+                    dio12.value(0)
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, "R5_OK_RIEGO")
+                        print("Dato enviado")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                if trama[1] == "ESTADO":
+                    x = xbee.XBee()
+                    estado = "ESTADO_R5_" + str(x.atcmd('VR')) + "_" + str(x.atcmd('%V')) + "_" + str(
+                        x.atcmd('TP')) + "_OK"
+                    print(estado)
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, estado)
+                        print("Dato enviado")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                if trama[1] == "SLEEP":
+                    tiempo = int(trama[2]) * 60000
+                    x = xbee.XBee().sleep_now(tiempo, True)
+
+                if trama[1] == "RESET":
+                    x = xbee.XBee()
+                    try:
+                        # Some protocols do not have 16-bit address. In those cases, use the 64-bit one.
+                        xbee.transmit(DIRECCION, "RESET_R5_OK")
+                        print("Dato enviado")
+                    except Exception as e:
+                        print("Error de transmision: %s" % str(e))
+
+                    x.atcmd('FR')

@@ -1,0 +1,3 @@
+para poner a correr el codigo en micropy automaticamente
+
+en la consola xctu mpy darle ctl + f, pegar el codigo, darle ctl + d, darle yes y ctrl + r y ya
